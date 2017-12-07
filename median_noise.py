@@ -35,7 +35,7 @@ for i in (DDSM):
 
 
 		if x == ds.pixel_array.shape[1]:
-			y + 1 = y
+			y = y + 1
 			x = 0
 	ds.PixelData = ds.pixel_array.tostring()
 	ds.save_as(i)
