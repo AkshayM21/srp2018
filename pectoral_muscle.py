@@ -37,7 +37,7 @@ def remove_pec(filename, init_thresh):
     bin_img = apply_mask(thresh, ds)
     pec_muscle = connected_comp(bin_img, False, True)
     for k in range(1, 5):
-
+        
 
 #placeholder - remember to import the real one from andy
 def apply_mask(threshold, dataset):
