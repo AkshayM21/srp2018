@@ -11,7 +11,6 @@ def weed_out(DDSM):
 
 
 #use if storage is running out - deletes the cc folders
-#legit godly method
 def weed_out_del(DDSM):
     startStr = "C:/Users/adven/Google Drive/9th Grade Files/srp rip us/datasets/CBIS-DDSM/Mass_Training_Full/CBIS-DDSM"
     DDSM = os.listdir(startStr)

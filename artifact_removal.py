@@ -3,7 +3,7 @@ import dicom
 import median_noise
 
 #uint16 means 0-65,535 grayscale
-
+#returns the best threshold, use for the pectoral_muscle function
 def otsu(DDSM):
 	for i in DDSM:
 		ds = dicom.read_file(i.tostring())
@@ -52,6 +52,7 @@ def otsu(DDSM):
 			x += x
 		ds.PixelData = picture.tostring()
 		ds.save_as(i)
+		return best_threshold
 
 
 
