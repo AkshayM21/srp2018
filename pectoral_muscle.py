@@ -63,7 +63,7 @@ def find_components(LB, label, MaxRow, MaxCol):
 
 def search(LB, label, L, P):
     LB[L,P] = label
-    Nset = neighbors(L, P)
+    Nset = neighbors(L, P, LB)
     for (Lprime,Pprime) in Nset:
         if LB[Lprime,Pprime] < 0: #not labeled - base case
             search(LB, label, Lprime, Pprime)

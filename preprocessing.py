@@ -11,24 +11,35 @@ print(DDSM)
 print(len(DDSM))
 DDSM = get_file.get_file("D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO")+"/000000.dcm"
 print(DDSM)
-#median_noise.noise_removal_single(DDSM)
-print("after noise removal")
-#flip.flip_single(DDSM)
+flip.flip_single(DDSM)
 print("after flip")
-ds = pydicom.dcmread(DDSM)
-ret, imgf = cv2.threshold(ds.pixel_array, 0, 65535, cv2.THRESH_OTSU)
-ds.PixelData = new_img.tostring()
-ds.save_as(DDSM)
-#  thresh = artifact_removal.otsu_single(DDSM)
-print("after artifact removal")
-pectoral_muscle.remove_pec(DDSM, ret)
 #resizing the image to 224 x 224 for the model
+ds = pydicom.dcmread(DDSM)
+
+#"""
 nparr = ds.pixel_array
-res = cv2.resize(nparr, dsize=(224, 224), interpolation=cv2.INTER_CUBIC)
+if(ds.Rows>ds.Columns):
+    crop_arr = nparr[(ds.Rows/2)-(ds.Columns/2):(ds.Rows/2)+(ds.Columns/2), :]
+    ds.Rows = ds.Columns
+else:
+    crop_arr = nparr[:, (ds.Columns/2)-(ds.Rows/2):(ds.Columns/2)+(ds.Rows/2)]
+    ds.Columns = ds.Rows
+print(ds)
+res = cv2.resize(crop_arr, dsize=(224, 224), interpolation=cv2.INTER_CUBIC)
+ds.Rows = 224
+ds.Columns = 224
+print(ds)
 ds.PixelData = res.tostring()
 ds.save_as(DDSM)
-
-print("after pec and resize")
+print("after resize")
+median_noise.noise_removal_single(DDSM)
+print("after noise removal")
+thresh = artifact_removal.otsu_single(DDSM)
+print thresh
+print("after artifact removal")
+pectoral_muscle.remove_pec(DDSM, thresh)
+print("done w/ preprocess")
+#"""
 
 """
 steps needed:

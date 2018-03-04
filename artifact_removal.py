@@ -82,6 +82,7 @@ def otsu_single(i):
         within_class_variance = f_weight*f_variance + b_weight*b_variance
         threshold_value.append(within_class_variance)
     best_threshold = max(threshold_value)
+
     #set the pixel values
     x = 0
     y = 0

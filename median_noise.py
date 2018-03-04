@@ -24,7 +24,7 @@ def noise_removal(DDSM):
             n_upr = ds.pixel_array[y - 1, x + 1]
             window = [n, n_up, n_upr, n_upl, n_l, n_downl, n_down, n_downr, n_r]
             #sorting
-            window = quick_sort.sort(window)
+            window = sorted(window)
             #set value to pixel
             ds.pixel_array[y, x] = window[4]
             if x == ds.pixel_array.shape[1]:
@@ -60,6 +60,6 @@ def noise_removal_single(i):
         if x == ds.pixel_array.shape[1]:
             y = y + 1
             x = 0
-        print("done with iteration" + str(pixel) +"for median noise")
+        print("done with iteration " + str(pixel) +" for median noise")
     ds.PixelData = ds.pixel_array.tostring()
     ds.save_as(i)
