@@ -1,16 +1,16 @@
-import dicom
+import pydicom
 import numpy as np
 
 #get init thresh from otsu's method
 #returns pec-less image
 def remove_pec(filename, init_thresh):
-    ds = dicom.read_file(filename)
+    ds = pydicom.dcmread(filename)
     #initializing all of the variables, masks, etc
     past_img = apply_mask(init_thresh, ds)
     pec_muscle_area = connected_comp(past_img)
     new_thresh = init_thresh
     for k in range(1, 5):
-        new_thresh = new_thresh+4369 #get new threshold - 4369 is one fifth of one third of the thing
+        new_thresh = new_thresh+4369 #get new threshold - 4369 is one fifth of one third of the threshold range
         #get binary mask + apply that and get area
         current_img = apply_mask(new_thresh, past_img)
         new_area = connected_comp(current_img)
@@ -19,7 +19,8 @@ def remove_pec(filename, init_thresh):
         else: #update with new area + image
             past_img = current_img
             pec_muscle_area = new_area
-    return past_img
+    ds.PixelData = past_img.tostring()
+    ds.save_as(filename)
 
 def apply_mask(threshold, ds):
     mask = ds.pixel_array
