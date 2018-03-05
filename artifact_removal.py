@@ -1,6 +1,8 @@
+from __future__ import division
 import numpy as np
 import pydicom
 import median_noise
+
 
 #uint16 means 0-65,535 grayscale
 #returns the best threshold, use for the pectoral_muscle function
@@ -62,26 +64,36 @@ def otsu_single(DDSM):
     picture = ds.pixel_array
     between_var = []
     threshold_value = []
-    for threshold in range(255): #different values for the threshold
+    for threshold in range(65536)[::256]: #different values for the threshold
         for pixel in range(picture.shape[0]*picture.shape[1]):
-            print("in "+str(pixel)+ " pixel and "+str(threshold)+" threshold")
+            #print("in "+str(pixel)+ " pixel and "+str(threshold)+" threshold")
+
             if picture[y, x] < threshold:
-                background.append(picture[y, x])
-            if picture[y, x] >= threshold:
+                background.append(picture[y,x])
+            else:
                 foreground.append(picture[y,x])
-            if x == picture.shape[1]:
+            if x == picture.shape[1]-1:
                 y += y
                 x = 0
                 continue
-            x += x
-        f_prob = (len(foreground)/(len(foreground)+len(background)))
-        b_prob = (len(background)/(len(foreground)+len(background)))
-        f_mean = np.mean(foreground)
-        b_mean = np.mean(background)
+            x += 1
+        #print foreground
+        #print background
+        f_prob = (len(foreground)/((len(foreground)+len(background)))*1.0)
+        b_prob = (len(background)/((len(foreground)+len(background)))*1.0)
+        if len(foreground) > 0:
+            f_mean = np.mean(foreground)
+        else:
+            f_mean = 0
+        if len(background) > 0:
+            b_mean = np.mean(background)
+        else:
+            b_mean = 0
         p_mean = np.mean(picture)
         between_class_variance = b_prob*((b_mean-p_mean)**2) + f_prob*((f_mean-p_mean)**2)
         between_var.append(between_class_variance)
         threshold_value.append(threshold)
+    print(between_var)
     thresh_index = np.argmax(between_var)
     print(thresh_index)
     best_threshold = threshold_value[thresh_index]
@@ -89,14 +101,16 @@ def otsu_single(DDSM):
     #set the pixel values
     x = 0
     y = 0
+    print(picture)
     for i in range(picture.shape[0]*picture.shape[1]):
-        if picture[y,x] > best_threshold:
+        if picture[y,x] < best_threshold:
             picture[y, x] = 0
-        if x == picture.shape[1]:
+        if x == picture.shape[1]-1:
             y += y
             x = 0
             continue
-        x += x
+        x += 1
+    print(picture)
     ds.PixelData = picture.tostring()
     ds.save_as(DDSM)
     return best_threshold

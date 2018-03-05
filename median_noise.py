@@ -1,6 +1,7 @@
 import numpy as np
 import pydicom
 from algorithms.sorting import quick_sort
+import pectoral_muscle
 
 def noise_removal(DDSM):
     for i in (DDSM):
@@ -43,6 +44,7 @@ def noise_removal_single(i):
     pixels = ds.pixel_array.shape[0]*ds.pixel_array.shape[1]
     for pixel in range(pixels):
         # define the pixel we're looking at
+        """
         n = ds.pixel_array[y , x]
         n_up = ds.pixel_array[y - 1, x]
         n_upl = ds.pixel_array[y - 1, x - 1]
@@ -52,14 +54,19 @@ def noise_removal_single(i):
         n_downr = ds.pixel_array[y + 1, x + 1]
         n_r = ds.pixel_array[y, x + 1]
         n_upr = ds.pixel_array[y - 1, x + 1]
+        
         window = [n, n_up, n_upr, n_upl, n_l, n_downl, n_down, n_downr, n_r]
+        """
+        window = pectoral_muscle.neighbors(y, x, ds.pixel_array)\
         #sorting
         window = quick_sort.sort(window)
-        #set value to pixel
-        ds.pixel_array[y, x] = window[4]
-        if x == ds.pixel_array.shape[1]:
+        #set value to pixel\
+        ds.pixel_array[y, x] = ds.pixel_array[window[len(window)/2][0], window[len(window)/2][1]]
+        if x == ds.pixel_array.shape[1]-1:
             y = y + 1
             x = 0
+            continue
+        x += 1
         print("done with iteration " + str(pixel) +" for median noise")
     ds.PixelData = ds.pixel_array.tostring()
     ds.save_as(i)

@@ -1,21 +1,20 @@
 import pydicom
 import numpy as np
 import config
+import scipy
+from scipy import ndimage
 
 #get init thresh from otsu's method
 #returns pec-less image
 def remove_pec(filename, init_thresh):
-    config.alreadyseen = []
     ds = pydicom.dcmread(filename)
     #initializing all of the variables, masks, etc
-    past_img = apply_mask(init_thresh, ds)
+    past_img = apply_mask(init_thresh, ds.pixel_array)
     ds.PixelData = past_img.tostring()
-    ds.save_as("D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/0000001.dcm")
+    ds.save_as("C:/Srp 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/0000001.dcm")
     pec_muscle_area = connected_comp(past_img)
     new_thresh = init_thresh
     for k in range(1, 5):
-        print("range is "+str(k))
-        config.alreadyseen = []
         new_thresh = new_thresh+4369 #get new threshold - 4369 is one fifth of one third of the threshold range
         #get binary mask + apply that and get area
         current_img = apply_mask(new_thresh, past_img)
@@ -28,38 +27,66 @@ def remove_pec(filename, init_thresh):
     ds.PixelData = past_img.tostring()
     ds.save_as(filename)
 
-def apply_mask(threshold, ds):
-    mask = ds.pixel_array.copy()
-    x = 0
+def apply_mask(threshold, pixel_array):
     y = 0
-    for i in range(mask.shape[0] * mask.shape[1]):
-        if mask[y, x] <= threshold:
-            mask[y, x] = 0
-        if mask[y, x] > threshold:
-            mask[y, x] = 65535
-        print mask
-        if x == mask.shape[1]:
+    x = 0
+    picture = pixel_array.copy()
+    for i in range(picture.shape[0]*picture.shape[1]):
+        if picture[y,x] < threshold:
+            flag = False
+            if picture[y,x]>0:
+                print(str(picture[y,x])+ " at "+ str(y)+ " , "+str(x))
+                print "The threshold is: " + str(threshold)
+                flag = True
+            picture[y, x] = 0
+            if flag:
+               print picture[y,x]
+        if x == picture.shape[1]-1:
             y += y
             x = 0
             continue
-        x += x
+        x += 1
+    """
+    print(ds)
+    print(ds.pixel_array)
+    pixels = ds.pixel_array
+    mask = np.zeros(pixels.shape)
+    x = 0
+    y = 0
+    for i in range(mask.shape[0] * mask.shape[1]):
+        if pixels[y, x] < threshold:
+            mask[y, x] = 0
+        if pixels[y, x] >= threshold:
+            mask[y, x] = 1
+        if x == mask.shape[1]-1:
+            y += y
+            x = 0
+            continue
+        x += 1
+    print(threshold)
     print("mask: ")
     print mask
     print("pixel array: ")
-    print ds.pixel_array
-    ds.PixelData = mask.tostring()
-    ds.save_as(
-        "D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/mask.dcm")
-
-    return np.multiply(ds.pixel_array, mask)
+    print pixels
+    #ds.PixelData = pixels.tostring()
+    #ds.save_as(
+     #   "D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/mask.dcm")
+"""
+    print("picture is: \n"+ str(picture))
+    return picture
 
 #returns the area of the pectoral muscle given the threshold
 def connected_comp(ds_arr):
     #shape[0] = numRows, shape[1] = numCols
-    labeled = recursive_connected_components(ds_arr)
+    #labeled = recursive_connected_components(ds_arr)
+    labeled, nr_objects = ndimage.label(ds_arr)
     return np.count_nonzero(labeled==1) #areas labeled one would be top right
 
+
+
+
 """
+OLD CONNECTED COMPONENTS ALGORITHM
 adapted from https://courses.cs.washington.edu/courses/cse373/00au/chcon.pdf
 """
 def recursive_connected_components(ds_arr):
