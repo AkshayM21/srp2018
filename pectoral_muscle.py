@@ -1,15 +1,21 @@
 import pydicom
 import numpy as np
+import config
 
 #get init thresh from otsu's method
 #returns pec-less image
 def remove_pec(filename, init_thresh):
+    config.alreadyseen = []
     ds = pydicom.dcmread(filename)
     #initializing all of the variables, masks, etc
     past_img = apply_mask(init_thresh, ds)
+    ds.PixelData = past_img.tostring()
+    ds.save_as("D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/0000001.dcm")
     pec_muscle_area = connected_comp(past_img)
     new_thresh = init_thresh
     for k in range(1, 5):
+        print("range is "+str(k))
+        config.alreadyseen = []
         new_thresh = new_thresh+4369 #get new threshold - 4369 is one fifth of one third of the threshold range
         #get binary mask + apply that and get area
         current_img = apply_mask(new_thresh, past_img)
@@ -23,49 +29,63 @@ def remove_pec(filename, init_thresh):
     ds.save_as(filename)
 
 def apply_mask(threshold, ds):
-    mask = ds.pixel_array
+    mask = ds.pixel_array.copy()
     x = 0
     y = 0
     for i in range(mask.shape[0] * mask.shape[1]):
-        if mask[y, x] < threshold:
+        if mask[y, x] <= threshold:
             mask[y, x] = 0
-        if mask[y, x] >= threshold:
-            mask[y, x] = 1
+        if mask[y, x] > threshold:
+            mask[y, x] = 65535
+        print mask
         if x == mask.shape[1]:
             y += y
             x = 0
             continue
         x += x
+    print("mask: ")
+    print mask
+    print("pixel array: ")
+    print ds.pixel_array
+    ds.PixelData = mask.tostring()
+    ds.save_as(
+        "D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/mask.dcm")
+
     return np.multiply(ds.pixel_array, mask)
 
 #returns the area of the pectoral muscle given the threshold
 def connected_comp(ds_arr):
     #shape[0] = numRows, shape[1] = numCols
     labeled = recursive_connected_components(ds_arr)
-    return np.count_nonzero(labeled==1) #areas labeled one would be top left
+    return np.count_nonzero(labeled==1) #areas labeled one would be top right
 
 """
 adapted from https://courses.cs.washington.edu/courses/cse373/00au/chcon.pdf
 """
 def recursive_connected_components(ds_arr):
     LB = np.multiply(ds_arr, -1)
+    print(LB)
     label = 0
-    find_components(LB, label, ds_arr.shape[0]-1, ds_arr.shape[1]-1)
+    find_components(LB, label, ds_arr.shape[0], ds_arr.shape[1])
     return LB
 
 
 def find_components(LB, label, MaxRow, MaxCol):
     for L in range(MaxRow):
-        for P in range(MaxCol):
+        for P in range(MaxCol)[::-1]:
             if LB[L,P] < 0: #not labeled foreground - means its a new component
                 label = label + 1
-                search(LB, label, L, P)
+                if((L, P) not in config.alreadyseen):
+                    config.alreadyseen.append((L, P))
+                    search(LB, label, L, P)
 
 def search(LB, label, L, P):
     LB[L,P] = label
+    print('new search at ' + str(L) + ', ' + str(P) + ' label of ' + str(LB[L,P]))
     Nset = neighbors(L, P, LB)
     for (Lprime,Pprime) in Nset:
-        if LB[Lprime,Pprime] < 0: #not labeled - base case
+        if LB[Lprime,Pprime] < 0 and (Lprime, Pprime) not in config.alreadyseen: #not labeled - base case
+            config.alreadyseen.append((Lprime, Pprime))
             search(LB, label, Lprime, Pprime)
 
 def neighbors(L, P, LB):

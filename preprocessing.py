@@ -6,17 +6,19 @@ import pectoral_muscle
 import cv2
 import pydicom
 
+import sys
+import threading
+
 DDSM = get_file.get_full_path("D:/Akshay SRP 2018/CBIS-DDSM")
 print(DDSM)
 print(len(DDSM))
 DDSM = get_file.get_file("D:/Akshay SRP 2018/Mass-Training_P_00001_LEFT_MLO")+"/000000.dcm"
 print(DDSM)
+"""
 flip.flip_single(DDSM)
 print("after flip")
 #resizing the image to 224 x 224 for the model
 ds = pydicom.dcmread(DDSM)
-
-#"""
 nparr = ds.pixel_array
 if(ds.Rows>ds.Columns):
     crop_arr = nparr[(ds.Rows/2)-(ds.Columns/2):(ds.Rows/2)+(ds.Columns/2), :]
@@ -34,10 +36,11 @@ ds.save_as(DDSM)
 print("after resize")
 median_noise.noise_removal_single(DDSM)
 print("after noise removal")
-thresh = artifact_removal.otsu_single(DDSM)
-print thresh
+#thresh = artifact_removal.otsu_single(DDSM)
+#print(thresh)
 print("after artifact removal")
-pectoral_muscle.remove_pec(DDSM, thresh)
+"""
+pectoral_muscle.remove_pec(DDSM, 65536)
 print("done w/ preprocess")
 #"""
 
