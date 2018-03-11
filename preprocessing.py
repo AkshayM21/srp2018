@@ -19,7 +19,7 @@ def final_preprocess():
     roi_split = mass_v_nonmass.ROI_Inverse(ROI)
     non_mass =  mass_v_nonmass.DDSM_Split(DDSM, roi_split)
 
-    return mass, non_mass
+    return mass, non_mass, DDSM
 
 
 
