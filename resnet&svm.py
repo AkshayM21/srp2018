@@ -2,32 +2,58 @@ import tensorflow
 from keras import applications
 import keras
 import numpy as np
-import sklearn
+from sklearn.svm import SVC
 import pydicom
 import get_file
+import mass_v_nonmass
 
 model = applications.ResNet50(weights='imagenet', top_layer = False)
 
-independent = []
-DDSM = []
-DDSM.append(get_file.get_file("C:/Srp 2018/Training-Full/Mass-Training_P_00001_LEFT_MLO"))
-for i in DDSM:
-	img_path = i
-	x = pydicom.dcmread(img_path).pixel_array
-	x = np.expand_dims(x, axis=0)
-	features = model.predict(x)
-	independent.append(features)
+mass = []
+non_mass = []
+
+# DDSM.append(get_file.get_file("C:/Srp 2018/Training-Full/Mass-Training_P_00001_LEFT_MLO"))
+# SET UP THE DIRECTORY IN THE FUNCTION
+
+"""
+DDSM = images
+mass_data = list of pixel arrays from mass_v_nonmass for MASS pictures
+nonmass_data = ^^ (but for NONMASS pictures)
+"""
+def getFeatures(DDSM, mass_data, nonmass_data):
+	features_mass = []
+	features_nonmass = []
+	for i in range(len(DDSM)):
+		x = mass_data[i]
+		x = np.expand_dims(x, axis=0)
+		features = model.predict(x)
+		features_mass.append(features)
+	for i in range(len(DDSM)):
+		y = nonmass_data[i]
+		y = np.expand_dims(y, axis = 0)
+		features = model.predict(y)
+		features_nonmass.append(features)
 
 
 """
+labels:
+1 === mass
+0 === nonmass
+"""
+
+non_mass_labels = np.zeros((len(features_nonmass)))
+mass_labels = np.full((len(features_mass)), 1)
+x_svm = []
+y_svm = []
+
+x_svm.append(features_mass)
+x_svm.append(features_nonmass)
+y_svm.append(mass_labels)
+y_svm.append(non_mass_labels)
+
 clf = sklearn.svm.SVC()
 
-x,y = independent, DDSM_ROI
 
-clf.fit(x, y)
-SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
-    decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
-    max_iter=-1, probability=False, random_state=None, shrinking=True,
-    tol=0.001, verbose=False)
+clf.fit(x_svm, y_svm)
 
-"""
+
