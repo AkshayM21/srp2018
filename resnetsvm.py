@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 import pydicom
 import get_file
 import mass_v_nonmass
-
+from sklearn.externals import joblib
 
 # DDSM.append(get_file.get_file("C:/Srp 2018/Training-Full/Mass-Training_P_00001_LEFT_MLO"))
 # SET UP THE DIRECTORY IN THE FUNCTION
@@ -55,4 +55,7 @@ def svm(features_nonmass, features_mass):
 
 
     clf.fit(x_svm, y_svm)
+
+    clf = joblib.dump(clf, "svm_model.pkl")
+
     
