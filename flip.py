@@ -4,11 +4,11 @@ import cv2
 
 #ddsm is a list of file names
 def flip(DDSM):
-    for i in (DDSM):
+    for i in DDSM:
         ds = pydicom.dcmread(i)
         list = i.split("_")
         if list[len(list) - 1] == "1" or list[len(list) - 1] == "2":
-            if list[len(list) - 3] == "LEFT":
+            if list[len(list) - 3] == "RIGHT":
                 """
                 height = ds.pixel_array.shape[0]
                 width = ds.pixel_array.shape[1]
@@ -26,7 +26,7 @@ def flip(DDSM):
                 ds.PixelData = pixel_arr.tostring()
                 ds.save_as(i)
         else:
-            if list[len(list) - 2] == "LEFT":
+            if list[len(list) - 2] == "RIGHT":
                 """
                 height = ds.pixel_array.shape[0]
                 width = ds.pixel_array.shape[1]
@@ -44,12 +44,11 @@ def flip(DDSM):
 
 
 
-
 def flip_single(i):
     ds = pydicom.dcmread(i)
     list = i.split("_")
     if list[len(list)-1] == "1" or list[len(list)-1] == "2":
-        if list[len(list)-3] == "LEFT":
+        if list[len(list)-3] == "RIGHT":
             """
             height = ds.pixel_array.shape[0]
             width = ds.pixel_array.shape[1]
@@ -67,7 +66,7 @@ def flip_single(i):
             ds.PixelData = pixel_arr.tostring()
             ds.save_as(i)
     else:
-        if list[len(list)-2] == "LEFT":
+        if list[len(list)-2] == "RIGHT":
             """
             height = ds.pixel_array.shape[0]
             width = ds.pixel_array.shape[1]

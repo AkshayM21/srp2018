@@ -5,50 +5,40 @@ import artifact_removal
 import pectoral_muscle
 import cv2
 import pydicom
+import replace
+from skimage import filters
 
-import sys
-import threading
-
-DDSM = get_file.get_file("C:\Srp 2018\Mass-Training_P_00001_LEFT_MLO")+"/000000.dcm"
+init_folder = "D:/Akshay SRP 2018/Training-Full/"
+DDSM = get_file.get_full_path(init_folder)
 print(DDSM)
-flip.flip_single(DDSM)
-print("after flip")
-#resizing the image to 224 x 224 for the model
-ds = pydicom.dcmread(DDSM)
-nparr = ds.pixel_array
-if(ds.Rows>ds.Columns):
-    crop_arr = nparr[(ds.Rows/2)-(ds.Columns/2):(ds.Rows/2)+(ds.Columns/2), :]
-    ds.Rows = ds.Columns
-else:
-    crop_arr = nparr[:, (ds.Columns/2)-(ds.Rows/2):(ds.Columns/2)+(ds.Rows/2)]
-    ds.Columns = ds.Rows
-print(ds)
-res = cv2.resize(crop_arr, dsize=(224, 224), interpolation=cv2.INTER_CUBIC)
-ds.Rows = 224
-ds.Columns = 224
-ds.PixelData = res.tostring()
-ds.save_as(DDSM)
-print("after resize")
-median_noise.noise_removal_single(DDSM)
-print("after noise removal")
-thresh = artifact_removal.otsu_single(DDSM)
-print(thresh)
-print("after artifact removal")
-pectoral_muscle.remove_pec(DDSM, thresh)
-print("done w/ preprocess")
+flip.flip(DDSM)
+print("done w/ flip")
+for i in DDSM:
+    ds = pydicom.dcmread(i)
+    nparr = ds.pixel_array
+    if(ds.Rows>ds.Columns):
+        crop_arr = nparr[(ds.Rows/2)-(ds.Columns/2):(ds.Rows/2)+(ds.Columns/2), :]
+        ds.Rows = ds.Columns
+    else:
+        crop_arr = nparr[:, (ds.Columns/2)-(ds.Rows/2):(ds.Columns/2)+(ds.Rows/2)]
+        ds.Columns = ds.Rows
+    res = cv2.resize(crop_arr, dsize=(224, 224), interpolation=cv2.INTER_CUBIC)
+    ds.Rows = 224
+    ds.Columns = 224
+    ds.PixelData = res.tostring()
+    ds.save_as(i)
+    ds = pydicom.dcmread(i)
+print("done with crop")
+median_noise.noise_removal(DDSM)
+print("done with noise removal")
+for i in DDSM:
+    thresh = filters.threshold_otsu(pydicom.dcmread(i).pixel_array)
+    pectoral_muscle.canny_remove(i)
+print("done w/ otsu's and pectoral muscle")
+print("done")
+
 
 """
-steps needed:
-1. noise reduction
-2. img flip
-3. otsu's
-4. pectoral muscle removal
-
-todo:
-integrate four above in one continuous thing
-try it out on one image (copied) - right and left
-if that works fully then do it for all
-
 
 #goes through preprocessing pipeline
 def preprocess(init_folder):

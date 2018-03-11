@@ -106,11 +106,12 @@ def otsu_single(DDSM):
         if picture[y,x] < best_threshold:
             picture[y, x] = 0
         if x == picture.shape[1]-1:
-            y += y
+            y += 1
             x = 0
             continue
         x += 1
     print(picture)
     ds.PixelData = picture.tostring()
     ds.save_as(DDSM)
+    #ds.save_as("C:/Srp 2018/Mass-Training_P_00001_LEFT_MLO/07-20-2016-DDSM-90988/1-full mammogram images-80834/otsu.dcm")
     return best_threshold
