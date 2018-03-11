@@ -19,7 +19,7 @@ for i in DDSM:
 	independent.append(features)
 
 
-"""
+"""d
 clf = sklearn.svm.SVC()
 
 x,y = independent, DDSM_ROI
