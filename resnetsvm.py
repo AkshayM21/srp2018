@@ -92,13 +92,21 @@ def svm(features_nonmass, features_mass):
     x_svm = []
     y_svm = []
 
-    x_svm.append(features_mass)
-    x_svm.append(features_nonmass)
-    y_svm.append(mass_labels)
-    y_svm.append(non_mass_labels)
+    x_list = []
+    #for i in range(len(features_mass)):
+    #    x_list.append(features_mass[0][0][0][i])
+    #                             
+    #for j in range(len(features_nonmass)):
+    #    x_list.append(features_nonmass[0][0][0][j])
+
+    
+    y_svm = np.append(mass_labels, non_mass_labels)
+        
+    #x_svm = np.asarray(x_list)
+
+    x_svm = np.concatenate((features_mass, features_nonmass), axis=0)
 
     clf = sklearn.svm.SVC()
-
 
     clf.fit(x_svm, y_svm)
 
