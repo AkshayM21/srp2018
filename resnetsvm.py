@@ -93,22 +93,28 @@ def svm(features_nonmass, features_mass):
     y_svm = []
 
     x_list = []
-    #for i in range(len(features_mass)):
-    #    x_list.append(features_mass[0][0][0][i])
-    #                             
-    #for j in range(len(features_nonmass)):
-    #    x_list.append(features_nonmass[0][0][0][j])
+    for i in range(len(features_mass)):
+        x_list.append(np.reshape(features_mass[i], 2048))
 
-    
+    for j in range(len(features_nonmass)):
+        x_list.append(np.reshape(features_nonmass[j], 2048))
+
+    #x_svm = np.concatenate((features_mass, features_nonmass), axis=0)
+
     y_svm = np.append(mass_labels, non_mass_labels)
-        
-    #x_svm = np.asarray(x_list)
 
-    x_svm = np.concatenate((features_mass, features_nonmass), axis=0)
+    x_svm = np.asarray(x_list)
+
 
     clf = sklearn.svm.SVC()
 
+
+
     clf.fit(x_svm, y_svm)
 
-    clf = joblib.dump(clf, "svm_model.pkl")
+    img = image.load_img("C:/Srp 2018/PNGs/mass0.png", target_size=(224, 224))
+    y = np.expand_dims(image.img_to_array(img), axis=0)
+    topredict = applications.ResNet50(weights='imagenet', include_top=False).predict(y)
+    print(clf.predict(np.reshape(topredict, (1, -1))))
+    #clf = joblib.dump(clf, "svm_model.pkl")
 
