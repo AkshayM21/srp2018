@@ -1,6 +1,5 @@
 import pydicom
 import numpy as np
-import config
 import scipy
 from scipy import ndimage
 

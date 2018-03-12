@@ -4,7 +4,6 @@ extra, previously written but currently unused methods from the pectoral muscle 
 
 import pydicom
 import numpy as np
-import config
 import scipy
 from scipy import ndimage
 import pectoral_muscle
@@ -218,15 +217,13 @@ def find_components(LB, label, MaxRow, MaxCol):
         for P in range(MaxCol)[::-1]:
             if LB[L,P] < 0: #not labeled foreground - means its a new component
                 label = label + 1
-                if((L, P) not in config.alreadyseen):
-                    config.alreadyseen.append((L, P))
-                    search(LB, label, L, P)
+                search(LB, label, L, P)
 
 def search(LB, label, L, P):
     LB[L,P] = label
     print('new search at ' + str(L) + ', ' + str(P) + ' label of ' + str(LB[L,P]))
     Nset = pectoral_muscle.neighbors(L, P, LB)
     for (Lprime,Pprime) in Nset:
-        if LB[Lprime,Pprime] < 0 and (Lprime, Pprime) not in config.alreadyseen: #not labeled - base case
-            config.alreadyseen.append((Lprime, Pprime))
+        if LB[Lprime,Pprime] < 0: #not labeled - base case
+            #config.alreadyseen.append((Lprime, Pprime))
             search(LB, label, Lprime, Pprime)

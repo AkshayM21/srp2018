@@ -11,13 +11,15 @@ import ddsm_roi
 import mass_v_nonmass
 
 def final_preprocess():
-    init_folder1 = "D:/Akshay SRP 2018/Training-Full/"
+    init_folder1 = "C:/Srp 2018/Training-Full/"
     DDSM = get_file.get_full_path(init_folder1)
+    print(DDSM)
+    print(len(DDSM))
     init_folder = "C:/Srp 2018/Training-ROI/CBIS-DDSM/"
     ROI, DDSM = ddsm_roi.get_roi(init_folder, DDSM)
     mass = mass_v_nonmass.ROI_Split(DDSM, ROI)
     roi_split = mass_v_nonmass.ROI_Inverse(ROI)
-    non_mass =  mass_v_nonmass.DDSM_Split(DDSM, roi_split)
+    non_mass =  mass_v_nonmass.DDSM_Split(DDSM, roi_split, ROI)
 
     return mass, non_mass, DDSM
 

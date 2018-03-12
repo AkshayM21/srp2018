@@ -17,14 +17,19 @@ def get_roi(init_folder, DDSM_main):
                 except IOError:
                     DDSM_ROI.append(DDSM[i]+"000000.dcm")
         except AttributeError:
-            DDSM_main.remove(DDSM_main[i])
+            try:
+                DDSM_main.remove(getDDSMequivalent(DDSM[i]))
+            except ValueError:
+                print(DDSM[i])
+                print(getDDSMequivalent(DDSM[i]))
             #print("uh oh at "+i)
     for j in range(len(DDSM_ROI)):
         try:
             x = pydicom.dcmread(DDSM_ROI[j]).pixel_array
         except AttributeError:
+            DDSM_main.remove(getDDSMequivalent(DDSM_ROI[j]))
             DDSM_ROI.remove(DDSM_ROI[j])
-            DDSM_main.remove(DDSM_main[j])
+
     print(len(DDSM_ROI))
     print(len(DDSM_main))
     return DDSM_ROI, DDSM_main
@@ -55,3 +60,11 @@ def make_mask(pixel_array):
             continue
         x+=1
     return pixel_array
+
+def getDDSMequivalent(filename):
+    import get_file
+    list = filename.split("/")
+    return get_file.get_file("C:/Srp 2018/Training-Full/"+list[4][0:len(list[4])-2])
+
+
+
