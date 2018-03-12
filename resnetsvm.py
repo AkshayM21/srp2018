@@ -112,9 +112,11 @@ def svm(features_nonmass, features_mass):
 
     clf.fit(x_svm, y_svm)
 
-    img = image.load_img("C:/Srp 2018/PNGs/mass0.png", target_size=(224, 224))
-    y = np.expand_dims(image.img_to_array(img), axis=0)
+    img = image.load_img("C:/Srp 2018/PNGs/mass1.png", target_size=(224, 224))
+    y = np.expand_dims(image.img_to_array(img)[0:197, 0:197], axis=0)
     topredict = applications.ResNet50(weights='imagenet', include_top=False).predict(y)
     print(clf.predict(np.reshape(topredict, (1, -1))))
+    print("made it")
+
     #clf = joblib.dump(clf, "svm_model.pkl")
 
