@@ -74,11 +74,11 @@ def final_preprocess():
     #print(len(DDSM))
     init_folder = "C:/Srp 2018/Training-ROI/CBIS-DDSM/"
     ROI, DDSM = ddsm_roi.get_roi_cropped(init_folder, DDSM)
-    mass = mass_v_nonmass.ROI_Split(DDSM, ROI)
+    #mass = mass_v_nonmass.ROI_Split(DDSM, ROI)
     roi_split = mass_v_nonmass.ROI_Inverse(ROI)
     non_mass =  mass_v_nonmass.DDSM_Split(DDSM, roi_split, ROI)
 
-    return mass, non_mass
+    return non_mass
 
 
 

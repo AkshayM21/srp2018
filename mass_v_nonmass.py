@@ -57,9 +57,9 @@ def ROI_Inverse(DDSM_ROI):
         x = 0
         for pixel in range(ddsmroi_array.shape[0]*ddsmroi_array.shape[1]):
             try:
-                if ddsmroi_array[y, x] == 65535:
+                if ddsmroi_array[y, x] > 0:
                     ddsmroi_array[y, x] = 0
-                if ddsmroi_array[y,x] == 0:
+                else:
                     ddsmroi_array[y,x] = 1
                 if x == ddsmroi_array.shape[0] - 1:
                     y = y + 1

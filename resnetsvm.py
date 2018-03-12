@@ -35,6 +35,7 @@ def getFeatures(mass_data, nonmass_data):
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         features = model.predict(x)
+        #print(features.shape)
         features_mass.append(features)
     for i in range(len(nonmass_data)):
         y = nonmass_data[i]
