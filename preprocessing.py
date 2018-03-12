@@ -9,6 +9,8 @@ import replace
 from skimage import filters
 import ddsm_roi
 import mass_v_nonmass
+
+
 """
 init_folder = "D:/Akshay SRP 2018/Test-Full/CBIS-DDSM/"
 DDSM = get_file.get_full_path(init_folder)
@@ -37,7 +39,33 @@ for i in DDSM:
     pectoral_muscle.canny_remove(i)
 print("done w/ otsu's and pectoral muscle")
 print("done")
-
+"""
+"""
+init_folder = "D:/Akshay SRP 2018/Test-ROI/CBIS-DDSM/"
+DDSMroi = ddsm_roi.get_roi(init_folder)
+flip.flip(DDSMroi)
+print("done w/ flip roi")
+for i in DDSMroi:
+    ds = pydicom.dcmread(i)
+    try:
+        nparr = ds.pixel_array
+    except AttributeError:
+        print("uh oh pass through at "+i)
+        DDSMroi.remove(i)
+        continue
+    if(ds.Rows>ds.Columns):
+        crop_arr = nparr[(ds.Rows/2)-(ds.Columns/2):(ds.Rows/2)+(ds.Columns/2), :]
+        ds.Rows = ds.Columns
+    else:
+        crop_arr = nparr[:, (ds.Columns/2)-(ds.Rows/2):(ds.Columns/2)+(ds.Rows/2)]
+        ds.Columns = ds.Rows
+    res = cv2.resize(crop_arr, dsize=(224, 224), interpolation=cv2.INTER_CUBIC)
+    ds.Rows = 224
+    ds.Columns = 224
+    ds.PixelData = res.tostring()
+    ds.save_as(i)
+print("done with crop roi")
+print("done roi")
 """
 def final_preprocess():
     init_folder1 = "C:/Srp 2018/Training-Full/"
@@ -45,7 +73,7 @@ def final_preprocess():
     #print(DDSM)
     #print(len(DDSM))
     init_folder = "C:/Srp 2018/Training-ROI/CBIS-DDSM/"
-    ROI, DDSM = ddsm_roi.get_roi(init_folder, DDSM)
+    ROI, DDSM = ddsm_roi.get_roi_cropped(init_folder, DDSM)
     mass = mass_v_nonmass.ROI_Split(DDSM, ROI)
     roi_split = mass_v_nonmass.ROI_Inverse(ROI)
     non_mass =  mass_v_nonmass.DDSM_Split(DDSM, roi_split, ROI)
@@ -75,7 +103,6 @@ def preprocess_main():
         ds.Columns = 224
         ds.PixelData = res.tostring()
         ds.save_as(i)
-        ds = pydicom.dcmread(i)
     print("done with crop")
     median_noise.noise_removal(DDSM)
     print("done with noise removal")
