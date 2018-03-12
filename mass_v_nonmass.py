@@ -1,6 +1,6 @@
 import pydicom
 import pectoral_muscle
-import numpy
+import numpy as np
 import os
 
 
@@ -17,7 +17,7 @@ def ROI_Split(DDSM, DDSM_ROI):
     for i in range(len(DDSM_ROI)):
         ddsmDICOM = pydicom.dcmread(ddsm_roi.getDDSMequivalent(DDSM_ROI[i]))
         ddsmroiDICOM = pydicom.dcmread(DDSM_ROI[i])
-        ROI_Array = ddsmDICOM.pixel_array * ddsmroiDICOM.pixel_array
+        ROI_Array = np.multiply(ddsmDICOM.pixel_array, ddsm_roi.make_mask(ddsmroiDICOM.pixel_array))
         mass.append(ROI_Array)
 
     return mass
@@ -36,7 +36,7 @@ def ROI_Inverse(DDSM_ROI):
         ddsmroiDICOM = pydicom.dcmread(DDSM_ROI[i])
         ddsmroi_array = ddsmroiDICOM.pixel_array.copy()
         for pixel in range(ddsmroi_array.shape[0]*ddsmroi_array.shape[1]):
-            if ddsmroi_array[y, x] == 1:
+            if ddsmroi_array[y, x] == 65535:
                 ddsmroi_array[y, x] = 0
             if ddsmroi_array[y,x] == 0:
                 ddsmroi_array[y,x] = 1
@@ -57,6 +57,6 @@ def DDSM_Split(DDSM, roi_split, DDSMROI):
 
         ddsmDICOM = pydicom.dcmread(ddsm_roi.getDDSMequivalent(DDSMROI[i]))
 
-        Invert_Array = ddsmDICOM.pixel_array * roi_split[i]
+        Invert_Array = np.multiply(ddsmDICOM.pixel_array, roi_split[i])
         non_mass.append(Invert_Array)
     return non_mass

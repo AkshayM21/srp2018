@@ -23,11 +23,11 @@ mass_data = list of pixel arrays from mass_v_nonmass for MASS pictures
 nonmass_data = ^^ (but for NONMASS pictures)
 """
 
-def getFeatures(length, mass_data, nonmass_data):
+def getFeatures(mass_data, nonmass_data):
     model = applications.ResNet50(weights='imagenet', include_top=False)
     features_mass = []
     features_nonmass = []
-    for i in range(length):
+    for i in range(len(mass_data)):
         x = mass_data[i]
         file_name = "C:/Srp 2018/PNGs/mass"+str(i)+".png"
         dicomToPng(x, file_name)
@@ -36,7 +36,7 @@ def getFeatures(length, mass_data, nonmass_data):
         x = np.expand_dims(x, axis=0)
         features = model.predict(x)
         features_mass.append(features)
-    for i in range(length):
+    for i in range(len(nonmass_data)):
         y = nonmass_data[i]
         file_name = "C:/Srp 2018/PNGs/nonmass" + str(i) + ".png"
         dicomToPng(y, file_name)
@@ -53,6 +53,10 @@ def dicomToPng(pixel_array, file_name):
 
     png_file = open(file_name, 'wb')
 
+    # Writing the PNG file
+    w = png.Writer(shape[0], shape[1], greyscale=True)
+    w.write(png_file, np.divide(pixel_array, 256))
+"""
     image_2d = []
     max_val = 0
     for row in pixel_array:
@@ -70,10 +74,11 @@ def dicomToPng(pixel_array, file_name):
             col_scaled = int((float(col) / float(max_val)) * 255.0)
             row_scaled.append(col_scaled)
         image_2d_scaled.append(row_scaled)
+        """
 
-    # Writing the PNG file
-    w = png.Writer(shape[0], shape[1], greyscale=True)
-    w.write(png_file, image_2d_scaled)
+
+
+
 
 """
 labels:
