@@ -136,7 +136,7 @@ def svm(features_nonmass, features_mass):
     x_svm = np.asarray(x_list)
 
 
-    clf = sklearn.svm.SVC()
+    clf = sklearn.svm.SVC(probability=True)
 
 
 
@@ -148,7 +148,7 @@ def svm(features_nonmass, features_mass):
     print(clf.predict(np.reshape(topredict, (1, -1))))
     print("made it")
        """
-    clf = joblib.dump(clf, "svm_model_convolve.pkl")
+    clf = joblib.dump(clf, "svm_model_convolve_prob.pkl")
 def predict_model():
     clf = joblib.load("svm_model.pkl")
     img = image.load_img("C:/Srp 2018/PNGs/nonmass494.png", target_size=(224, 224))
@@ -178,7 +178,7 @@ def convolve_train(img, stem, model):
     column = 0
     iter = 0
     radius = 56
-    features_mass = []
+    features_nonmass = []
     print(img.shape)
     for multirow in range(img.shape[1]//radius):
         for multicolumn in range(img.shape[0]//radius):
@@ -191,17 +191,58 @@ def convolve_train(img, stem, model):
             blah = np.expand_dims(blah, axis=0)
             features = model.predict(blah)
             #print(features.shape)
-            features_mass.append(features)
+            features_nonmass.append(features)
             column+=radius
             iter+=1
         row+=radius
         column = 0
-    return features_mass
-
-
-def convolve_test(img, stem, model, clf):
-    blah = 1
-
-
-
+    return features_nonmass
     
+def test():
+    DDSM = []
+
+
+def convolve_svm_test(img, stem, model, clf, clf_prob):
+    row = 0
+    column = 0
+    iter = 0
+    radius = 56
+    print(img.shape)
+    for multirow in range(img.shape[1]//radius):
+        for multicolumn in range(img.shape[0]//radius):
+            tosave = np.zeros((224, 224))
+            tosave[row:row+radius, column:column+radius] = img[row:row+radius, column:column+radius]
+            dicomToPng(tosave, stem+str(iter)+".png")
+            imago = image.load_img(stem+str(iter)+".png", target_size=(224, 224))
+            blah = image.img_to_array(imago)
+            blah = np.expand_dims(blah, axis=0)
+            features = model.predict(blah)
+            x_list = []
+            x_list.append(features.reshape(2048))
+            x_svm = np.asarray(x_list)
+            out = clf.predict(x_svm)
+            if int(out) == 1:
+                init_prob = clf_prob.predict_proba(x_svm)
+                init_prob_mass = init_prob[1]
+                for new_rad in range(2, radius)[::-6]:
+                     newtosave = np.zeros((224, 224))
+                     newtosave[(row+radius)/2 - new_rad/2:(row+radius)/2 +new_rad/2, (column+radius)/2 - new_rad/2: (column+radius)/2 + new_rad/2] = img[(row+radius)/2 - new_rad/2:(row+radius)/2 +new_rad/2, (column+radius)/2 - new_rad/2: (column+radius)/2 + new_rad/2]
+                     #above line basically has radius go from middle rather than top left
+                     #print(str(row)+" , "+str(column))
+                     dicomToPng(newtosave, stem+str(iter)+"b"+str(new_rad)+".png")
+                     imago = image.load_img(stem+str(iter)+".png", target_size=(224, 224))
+                     blah = image.img_to_array(imago)
+                     blah = np.expand_dims(blah, axis=0)
+                     features = model.predict(blah)
+                     x_list = []
+                     x_list.append(features.reshape(2048))
+                     x_svm = np.asarray(x_list)
+                     current_prob_mass = clf_prob.predict_proba(x_svm)[1]
+                     if current_prob_mass >= 0.9:
+                        print("change in prob for image "+stem+" was "+(current_prob_mass-init_prob_mass))
+                        return newtosave
+            #print(features.shape)
+            column+=radius
+            iter+=1
+        row+=radius
+        column = 0
