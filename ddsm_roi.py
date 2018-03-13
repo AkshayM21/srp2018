@@ -105,6 +105,3 @@ def getDDSMequivalent(filename):
     import get_file
     list = filename.split("/")
     return get_file.get_file("C:/Srp 2018/Training-Full/"+list[4][0:len(list[4])-2])
-
-
-

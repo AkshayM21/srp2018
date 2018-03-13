@@ -12,6 +12,7 @@ import h5py
 from keras.applications.resnet50 import preprocess_input, decode_predictions
 import png
 from keras.preprocessing import image
+import pickle
 
 
 # DDSM.append(get_file.get_file("C:/Srp 2018/Training-Full/Mass-Training_P_00001_LEFT_MLO"))
@@ -27,16 +28,20 @@ def getFeatures(mass_data, nonmass_data):
     model = applications.ResNet50(weights='imagenet', include_top=False)
     features_mass = []
     features_nonmass = []
+    """
     for i in range(len(mass_data)):
-        x = mass_data[i]
+        #x = mass_data[i]
         file_name = "C:/Srp 2018/PNGs/mass"+str(i)+".png"
-        dicomToPng(x, file_name)
+        #dicomToPng(x, file_name)
         img = image.load_img(file_name, target_size=(224, 224))
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis=0)
         features = model.predict(x)
         #print(features.shape)
         features_mass.append(features)
+    """
+    with open("feat_mass.p", "rb") as f:
+        features_mass = pickle.load(f)
     for i in range(len(nonmass_data)):
         y = nonmass_data[i]
         file_name = "C:/Srp 2018/PNGs/nonmass" + str(i) + ".png"
@@ -47,6 +52,31 @@ def getFeatures(mass_data, nonmass_data):
         features = model.predict(y)
         features_nonmass.append(features)
     return features_mass, features_nonmass
+
+def get_features_convole(mass_data, nonmass_data):
+    model = applications.ResNet50(weights='imagenet', include_top=False)
+    features_mass = []
+    features_nonmass = []
+    """                                                                               
+    for i in range(len(mass_data)):                                                   
+        #x = mass_data[i]                                                             
+        file_name = "C:/Srp 2018/PNGs/mass"+str(i)+".png"                             
+        #dicomToPng(x, file_name)                                                     
+        img = image.load_img(file_name, target_size=(224, 224))                       
+        x = image.img_to_array(img)                                                   
+        x = np.expand_dims(x, axis=0)                                                 
+        features = model.predict(x)                                                   
+        #print(features.shape)                                                        
+        features_mass.append(features)                                                
+    """
+    with open("feat_mass.p", "rb") as f:
+        features_mass = pickle.load(f)
+    for i in range(len(nonmass_data)):
+        y = nonmass_data[i]
+        stem = "C:/Srp 2018/PNGs/nonmass" + str(i) + "a"
+        features_nonmass+=convolve_train(y, stem, model)
+    return features_mass, features_nonmass
+
 
 def dicomToPng(pixel_array, file_name):
 
@@ -111,12 +141,67 @@ def svm(features_nonmass, features_mass):
 
 
     clf.fit(x_svm, y_svm)
-
-    img = image.load_img("C:/Srp 2018/PNGs/mass1.png", target_size=(224, 224))
-    y = np.expand_dims(image.img_to_array(img)[0:197, 0:197], axis=0)
+    """
+    img = image.load_img("C:/Srp 2018/PNGs/nonmass494.png", target_size=(224, 224))
+    y = np.expand_dims(image.img_to_array(img)[0:4, 0:4], axis=0)
     topredict = applications.ResNet50(weights='imagenet', include_top=False).predict(y)
     print(clf.predict(np.reshape(topredict, (1, -1))))
     print("made it")
+       """
+    clf = joblib.dump(clf, "svm_model_convolve.pkl")
+def predict_model():
+    clf = joblib.load("svm_model.pkl")
+    img = image.load_img("C:/Srp 2018/PNGs/nonmass494.png", target_size=(224, 224))
+    y = np.expand_dims(image.img_to_array(img)[0:197, 0:197], axis=0)
+    topredict = applications.ResNet50(weights='imagenet', include_top=False).predict(y)
+    print(topredict.shape)
+    print (topredict)
+    x_list = []
+    x_list.append(topredict.reshape(2048))
+    x_svm = np.asarray(x_list)
+    print(clf.predict(x_svm))
 
-    #clf = joblib.dump(clf, "svm_model.pkl")
+def convolve_train(img, stem, model):
+    """
+    y = 0
+    x = img.shape[0]-1
+    for _ in img.shape[0]*img.shape[1]:
+        if img[y, x] != 0:
+            break
+        if y==img.shape[1]-1:
+            y = 0
+            x-=1
+        y+=1
+    img = img[:, 0:x]
+    """
+    row = 0
+    column = 0
+    iter = 0
+    radius = 56
+    features_mass = []
+    print(img.shape)
+    for multirow in range(img.shape[1]//radius):
+        for multicolumn in range(img.shape[0]//radius):
+            tosave = np.zeros((224, 224))
+            tosave[row:row+radius, column:column+radius] = img[row:row+radius, column:column+radius]
+            #print(str(row)+" , "+str(column))
+            dicomToPng(tosave, stem+str(iter)+".png")
+            imago = image.load_img(stem+str(iter)+".png", target_size=(224, 224))
+            blah = image.img_to_array(imago)
+            blah = np.expand_dims(blah, axis=0)
+            features = model.predict(blah)
+            #print(features.shape)
+            features_mass.append(features)
+            column+=radius
+            iter+=1
+        row+=radius
+        column = 0
+    return features_mass
 
+
+def convolve_test(img, stem, model, clf):
+    blah = 1
+
+
+
+    
