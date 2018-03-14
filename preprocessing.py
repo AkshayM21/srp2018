@@ -9,6 +9,7 @@ import replace
 from skimage import filters
 import ddsm_roi
 import mass_v_nonmass
+import os
 
 
 """
@@ -80,6 +81,36 @@ def final_preprocess():
 
     return mass, non_mass
 
+def final_preprocess_vgg():
+    init_folder1 = "C:/Srp 2018/Training-Full/"
+    DDSM = get_file.get_full_path(init_folder1)
+    init_folder = "C:/Srp 2018/Training-ROI/CBIS-DDSM/"
+    ROI, DDSM = ddsm_roi.get_roi_cropped(init_folder, DDSM)
+    mass = []
+    for i in ROI:
+        list = i.split("/")
+        if list[len(list)-1]=="000000.dcm":
+            if os.access(i[0:len(i)-5]+"1.dcm", os.F_OK):
+                ds = pydicom.dcmread(i[0:len(i) - 5] + "1.dcm")
+            else:
+                ds = pydicom.dcmread(get_file.get_folder_other("C:/Srp 2018/Training-ROI/CBIS-DDSM/"+list[4]+"")+"000000.dcm")
+        else:
+            if os.access(i[0:len(i)-5]+"0.dcm", os.F_OK):
+                ds = pydicom.dcmread(i[0:len(i) - 5] + "0.dcm")
+            else:
+                ds = pydicom.dcmread(get_file.get_folder_other("C:/Srp 2018/Training-ROI/CBIS-DDSM/" + list[4] + "")+"000000.dcm")
+        pixel_array = ds.pixel_array
+        if (ds.Rows > ds.Columns):
+            crop_arr = pixel_array[int(ds.Rows / 2) - int(ds.Columns / 2):int(ds.Rows / 2) + int(ds.Columns / 2), :]
+        else:
+            crop_arr = pixel_array[:, int(ds.Columns / 2) - int(ds.Rows / 2):int(ds.Columns / 2) + int(ds.Rows / 2)]
+            ds.Columns = ds.Rows
+        res = cv2.resize(crop_arr, dsize=(56, 56), interpolation=cv2.INTER_CUBIC)
+        mass.append(res)
+    roi_split = mass_v_nonmass.ROI_Inverse(ROI)
+    non_mass = mass_v_nonmass.DDSM_Split(DDSM, roi_split, ROI)
+
+    return mass, non_mass
 
 
 

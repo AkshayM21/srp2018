@@ -53,11 +53,35 @@ def getFeatures(mass_data, nonmass_data):
         features_nonmass.append(features)
     return features_mass, features_nonmass
 
-def get_features_convolve(mass_data, nonmass_data):
-    model = applications.ResNet50(weights='imagenet', include_top=False)
+def get_features_vgg(mass_data, nonmass_data):
+    model = applications.VGG19(weights='imagenet', include_top=False, input_shape=(56, 56, 3))
     features_mass = []
     features_nonmass = []
-    """
+    for i in range(len(mass_data)):
+        x = mass_data[i]
+        file_name = "C:/Srp 2018/PNGs/mass" + str(i) + ".png"
+        dicomToPng(x, file_name)
+        img = image.load_img(file_name, target_size=(56, 56))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        features = model.predict(x)
+        # print(features.shape)
+        features_mass.append(features)
+    with open("feat_mass.p", "rb") as f:
+        features_mass = pickle.load(f)
+    for i in range(len(nonmass_data)):
+        print(i)
+        y = nonmass_data[i]
+        stem = "C:/Srp 2018/PNGs/nonmass" + str(i) + "a"
+        features_nonmass += convolve_train_vgg(y, stem, model)
+    return features_mass, features_nonmass
+
+
+
+def get_features_convolve(mass_data, nonmass_data):
+    model = applications.ResNet50(weights='imagenet', include_top=False, input_shape=(56, 56, 3))
+    features_mass = []
+    features_nonmass = []
     for i in range(len(mass_data)):                                                   
         x = mass_data[i]
         file_name = "C:/Srp 2018/PNGs/mass"+str(i)+".png"                             
@@ -70,7 +94,6 @@ def get_features_convolve(mass_data, nonmass_data):
         features_mass.append(features)
     with open("feat_mass.p", "rb") as f:
         features_mass = pickle.load(f)
-        """
     iter = len(mass_data)
     for i in range(len(nonmass_data)):
         print(i)
@@ -178,8 +201,8 @@ def svm(features_nonmass, features_mass):
     print(clf.predict(np.reshape(topredict, (1, -1))))
     print("made it")
        """
-    clf = joblib.dump(clf, "svm_convolve_noblack.pkl")
-    clf_prob = joblib.dump(clf_prob, "svm_convolve-noblack_prob.pkl")
+    clf = joblib.dump(clf, "svm_vgg.pkl")
+    clf_prob = joblib.dump(clf_prob, "svm_vgg_prob.pkl")
 
 
 def predict_model():
@@ -198,7 +221,7 @@ def convolve_train_noblack(img, stem, model, len_mass):
     row = 0
     column = 0
     iter = 0
-    radius = 45
+    radius = 50
     features_nonmass = []
     #print(img.shape)
     for multirow in range(img.shape[1]//radius):
@@ -323,7 +346,7 @@ def convolve_svm_test(img, stem, model, clf, clf_prob):
     row = 0
     column = 0
     iter = 0
-    radius = 32
+    radius = 28
     print(img.shape)
     patch_list = []
     for multirow in range(img.shape[1]//radius):
@@ -388,3 +411,65 @@ def get_test_roi_names(DDSM_name):
             file_list.append(file)
     return file_list
 
+def convolve_train_vgg(img, stem, model):
+    row = 0
+    column = 0
+    iter = 0
+    radius = 56
+    features_nonmass = []
+    #print(img.shape)
+    for multirow in range(img.shape[1]//radius):
+        for multicolumn in range(img.shape[0]//radius):
+            if window_percent_zeros(img[row:row+radius, column:column+radius])<=0.3:
+                tosave = img[row:row+radius, column:column+radius]
+                #print(str(row)+" , "+str(column))
+                dicomToPng(tosave, stem+str(iter)+".png")
+                imago = image.load_img(stem+str(iter)+".png", target_size=(56, 56))
+                blah = image.img_to_array(imago)
+                blah = np.expand_dims(blah, axis=0)
+                features = model.predict(blah)
+                #print(features.shape)
+                features_nonmass.append(features)
+                column+=radius
+                iter+=1
+        row+=radius
+        column = 0
+    return features_nonmass
+
+
+
+
+
+def svm_vgg(features_nonmass, features_mass):
+    non_mass_labels = np.zeros((len(features_nonmass)))
+    mass_labels = np.full((len(features_mass)), 1)
+    x_svm = []
+    y_svm = []
+
+    x_list = []
+    for i in range(len(features_nonmass)):
+        x_list.append(np.reshape(features_nonmass[i], 512))
+
+    for j in range(len(features_mass)):
+        x_list.append(np.reshape(features_mass[j], 2048))
+
+    #x_svm = np.concatenate((features_mass, features_nonmass), axis=0)
+
+    y_svm = np.append(non_mass_labels, mass_labels)
+
+    x_svm = np.asarray(x_list)
+
+    clf = sklearn.svm.SVC()
+    clf_prob = sklearn.svm.SVC(probability=True)
+
+    clf.fit(x_svm, y_svm)
+    clf_prob.fit(x_svm, y_svm)
+    """                                                                                               
+    img = image.load_img("C:/Srp 2018/PNGs/nonmass494.png", target_size=(224, 224))                   
+    y = np.expand_dims(image.img_to_array(img)[0:4, 0:4], axis=0)                                     
+    topredict = applications.ResNet50(weights='imagenet', include_top=False).predict(y)               
+    print(clf.predict(np.reshape(topredict, (1, -1))))                                                
+    print("made it")                                                                                  
+       """
+    clf = joblib.dump(clf, "svm_vgg.pkl")
+    clf_prob = joblib.dump(clf_prob, "svm_vgg_prob.pkl")
