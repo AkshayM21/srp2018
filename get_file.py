@@ -8,6 +8,8 @@ def get_file(folderpath):
                 folderpath += "/" + os.listdir(folderpath)[0]
             else:
                 break
+    else:
+        return None
     return folderpath+"/000000.dcm"
 
 

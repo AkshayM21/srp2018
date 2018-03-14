@@ -7,6 +7,7 @@ def get_roi_cropped(init_folder, DDSM_main):
     DDSM_ROI = []
     for i in range(len(DDSM))[::-1]:
         ds = pydicom.dcmread(DDSM[i]+"000000.dcm")
+        #print(getDDSMequivalent(DDSM[i]))
         try:
             if is_mask_cropped(ds.pixel_array.copy()):
                 DDSM_ROI.append(DDSM[i]+"000000.dcm")

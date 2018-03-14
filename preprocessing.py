@@ -40,7 +40,7 @@ for i in DDSM:
 print("done w/ otsu's and pectoral muscle")
 print("done")
 """
-
+"""
 init_folder = "D:/Akshay SRP 2018/Test-ROI/CBIS-DDSM/"
 DDSMroi = ddsm_roi.get_roi(init_folder)
 flip.flip(DDSMroi)
@@ -66,7 +66,7 @@ for i in DDSMroi:
     ds.save_as(i)
 print("done with crop roi")
 print("done roi")
-
+"""
 def final_preprocess():
     init_folder1 = "C:/Srp 2018/Training-Full/"
     DDSM = get_file.get_full_path(init_folder1)
