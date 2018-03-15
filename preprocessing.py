@@ -99,13 +99,13 @@ def final_preprocess_vgg():
                 ds = pydicom.dcmread(i[0:len(i) - 5] + "0.dcm")
             else:
                 ds = pydicom.dcmread(get_file.get_folder_other("C:/Srp 2018/Training-ROI/CBIS-DDSM/" + list[4] + "")+"000000.dcm")
-        pixel_array = ds.pixel_array
+        pixel_array = ds.pixel_array.copy()
         if (ds.Rows > ds.Columns):
             crop_arr = pixel_array[int(ds.Rows / 2) - int(ds.Columns / 2):int(ds.Rows / 2) + int(ds.Columns / 2), :]
         else:
             crop_arr = pixel_array[:, int(ds.Columns / 2) - int(ds.Rows / 2):int(ds.Columns / 2) + int(ds.Rows / 2)]
-            ds.Columns = ds.Rows
         res = cv2.resize(crop_arr, dsize=(56, 56), interpolation=cv2.INTER_CUBIC)
+        print(res.shape)
         mass.append(res)
     roi_split = mass_v_nonmass.ROI_Inverse(ROI)
     non_mass = mass_v_nonmass.DDSM_Split(DDSM, roi_split, ROI)

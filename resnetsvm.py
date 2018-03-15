@@ -307,6 +307,8 @@ def test():
     num_patches = 0
     true_positives = 0
     false_positives = 0
+    true_negatives = 0
+    false_negatives = 0
     #DDSM = ["C:/Srp 2018/Test-ROI/CBIS-DDSM/Mass-Test_P_00017_LEFT_MLO_1/10-04-2016-DDSM-27297/1-ROI mask images-18984/000001.dcm"]
     #DDSM = ["C:/Srp 2018/Test-Full/CBIS-DDSM/Mass-Test_P_00017_LEFT_MLO/10-04-2016-DDSM-89998/1-full mammogram images-29934/000000.dcm"]
     for i in range(len(DDSM)):
@@ -317,36 +319,44 @@ def test():
         #print(patch_list)
         #patch list is a list of tuples that contain the x index of the middle pixel of the path
         #the y inex of the middle pixel, and the radius of the patch
-        num_patches+= len(patch_list)
+
         test_roi_names = get_test_roi_names(DDSM[i])
         #print(test_roi_names)
         for j in range(len(test_roi_names)):
             corrects = 0
             true_pos = 0
             false_pos = 0
+            true_neg = 0
+            false_neg = 0
             for k in range(len(patch_list)):
                 #print("in")
                 try:
+                    if patch_list[k][3]==1:
+                        num_patches+=1
                     coord_correct = correct_test.constructPatch(pydicom.dcmread(test_roi_names[j]).pixel_array, patch_list[k][0], patch_list[k][1], patch_list[k][2])
-                    corrects, incorrects, true_pos, false_pos = correct_test.correct(coord_correct, patch_list[k], True)
+                    corrects, incorrects, true_pos, false_pos, true_neg, false_neg = correct_test.correct(coord_correct, patch_list[k], int(patch_list[k][3])==1)
                     if corrects!=0: break
                 except AttributeError:
                     print("uh oh at "+test_roi_names[j])
             correct_patches+=corrects
-            print(corrects)
+            #print(corrects)
             true_positives+=true_pos
             false_positives += false_pos
+            true_negatives += true_neg
+            false_negatives += false_neg
     print("correct patches = "+str(correct_patches))
     print("num patches = "+str(num_patches))
     print("accuracy = "+str(correct_patches/num_patches))
     print("true positives = "+str(true_positives))
     print("false positives = "+str(false_positives))
+    print("true negatives = "+str(true_negatives))
+    print("false negatives = "+str(false_negatives))
 
 def convolve_svm_test(img, stem, model, clf, clf_prob):
     row = 0
     column = 0
     iter = 0
-    radius = 28
+    radius = 32
     print(img.shape)
     patch_list = []
     for multirow in range(img.shape[1]//radius):
@@ -363,7 +373,8 @@ def convolve_svm_test(img, stem, model, clf, clf_prob):
                 x_list.append(features.reshape(2048))
                 x_svm = np.asarray(x_list)
                 out = clf.predict(x_svm)
-                print(out)
+                #print(out)
+                new_rad = radius
                 if int(out) == 1:
                     print(out)
                     init_prob = clf_prob.predict_proba(x_svm)
@@ -389,7 +400,7 @@ def convolve_svm_test(img, stem, model, clf, clf_prob):
                          if current_prob_mass >= 0.9:
                             print("change in prob for image "+stem+" was "+(current_prob_mass-init_prob_mass))
                             break
-                    patch_list.append((middley, middlex, new_rad))
+                patch_list.append((int((row+radius)/2) , int((column+radius)/2), new_rad, out))
             #print(features.shape)
             column+=radius
             iter+=1
@@ -414,7 +425,7 @@ def get_test_roi_names(DDSM_name):
 def convolve_train_vgg(img, stem, model):
     row = 0
     column = 0
-    iter = 0
+    itera = 0
     radius = 56
     features_nonmass = []
     #print(img.shape)
@@ -422,16 +433,17 @@ def convolve_train_vgg(img, stem, model):
         for multicolumn in range(img.shape[0]//radius):
             if window_percent_zeros(img[row:row+radius, column:column+radius])<=0.3:
                 tosave = img[row:row+radius, column:column+radius]
+                print(tosave.shape)
                 #print(str(row)+" , "+str(column))
-                dicomToPng(tosave, stem+str(iter)+".png")
-                imago = image.load_img(stem+str(iter)+".png", target_size=(56, 56))
+                dicomToPng(tosave, stem+str(itera)+".png")
+                imago = image.load_img(stem+str(itera)+".png", target_size=(56, 56))
                 blah = image.img_to_array(imago)
                 blah = np.expand_dims(blah, axis=0)
                 features = model.predict(blah)
                 #print(features.shape)
                 features_nonmass.append(features)
                 column+=radius
-                iter+=1
+                itera+=1
         row+=radius
         column = 0
     return features_nonmass
@@ -447,23 +459,33 @@ def svm_vgg(features_nonmass, features_mass):
     y_svm = []
 
     x_list = []
+    x2_list = []
     for i in range(len(features_nonmass)):
         x_list.append(np.reshape(features_nonmass[i], 512))
 
     for j in range(len(features_mass)):
-        x_list.append(np.reshape(features_mass[j], 2048))
+        x2_list.append(np.reshape(features_mass[j], 2048))
 
-    #x_svm = np.concatenate((features_mass, features_nonmass), axis=0)
+    x_svm = [np.concatenate((np.asarray(x_list).flatten(), np.asarray(x2_list).flatten()))]
+    x_svm = np.asarray(x_svm)
 
-    y_svm = np.append(non_mass_labels, mass_labels)
+    y_svm = np.concatenate((non_mass_labels.flatten(), mass_labels.flatten()))
 
-    x_svm = np.asarray(x_list)
+    x_list = []
+    x2_list = []
+    for i in range(len(features_nonmass)):
+        x_list.append(np.reshape(features_nonmass[i], 512))
+
+    for j in range(len(features_mass)):
+        x2_list.append(np.reshape(features_mass[j], 2048))
 
     clf = sklearn.svm.SVC()
     clf_prob = sklearn.svm.SVC(probability=True)
 
-    clf.fit(x_svm, y_svm)
-    clf_prob.fit(x_svm, y_svm)
+    clf.fit(np.asarray(x2_list), mass_labels)
+    clf.fit(np.asarray(x_list), non_mass_labels)
+    clf_prob.fit(np.asarray(x2_list), mass_labels)
+    clf_prob.fit(np.asarray(x_list), non_mass_labels)
     """                                                                                               
     img = image.load_img("C:/Srp 2018/PNGs/nonmass494.png", target_size=(224, 224))                   
     y = np.expand_dims(image.img_to_array(img)[0:4, 0:4], axis=0)                                     
@@ -473,3 +495,4 @@ def svm_vgg(features_nonmass, features_mass):
        """
     clf = joblib.dump(clf, "svm_vgg.pkl")
     clf_prob = joblib.dump(clf_prob, "svm_vgg_prob.pkl")
+                        

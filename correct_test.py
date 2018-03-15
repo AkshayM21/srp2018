@@ -28,6 +28,8 @@ def correct(coords_correct, patch_check, answer):
     in_patch = 0
     true_positives = 0
     false_positives = 0
+    true_negatives = 0
+    false_negatives = 0
     corrects = 0
     incorrects = 0
     y =0
@@ -43,13 +45,15 @@ def correct(coords_correct, patch_check, answer):
         true_positives+=1
     if in_patch >= len(coords_correct)*0.20 and answer == False:
         incorrects = incorrects + 1
+        false_negatives+=1
     if in_patch < len(coords_correct)*0.20 and answer == True:
         incorrects = incorrects + 1
         false_positives += 1
     if in_patch < len(coords_correct)*0.20 and answer == False:
         corrects = corrects + 1
+        true_negatives+=1
 
-    return corrects, incorrects, true_positives, false_positives
+    return corrects, incorrects, true_positives, false_positives, true_negatives, false_negatives
 
 def get_coordinate_tuple(blockinfo):
     topleftx = blockinfo[0]
